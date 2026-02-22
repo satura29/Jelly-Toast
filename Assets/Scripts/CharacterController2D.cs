@@ -47,6 +47,16 @@ public class CharacterController2DScript : MonoBehaviour
     public bool _isAlive = true;
     public bool jumpFlag = false;
 
+    [Header("Jelly Machanics")]
+    public bool hasJamPowerUp = false;
+
+    [Header("Wall Stick Settings")]
+    public LayerMask wallLayerMask;
+    public float wallSlideSpeed = 1f;
+    public float wallJumpForce = 5f;
+    public float wallJumpVertical = 2f;
+    public bool isTouchingWall = false;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -158,10 +168,46 @@ public class CharacterController2DScript : MonoBehaviour
             }
         }
 
+        if (hasJamPowerUp)
+        {
+            float checkDist = 0.8f;
+            bool wallRight = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.right * checkDist, 0.2f, wallLayerMask);
+            bool wallLeft = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.left * checkDist, 0.2f, wallLayerMask);
+            
+            isTouchingWall = wallRight || wallLeft;
+
+            if (isTouchingWall && !isGrounded)
+            {
+                if (currJumps > 0)
+                {
+                    currJumps = 0;
+                    animator.SetFloat("Jumps", 0); // Stops the flipping
+                }
+
+                rb.linearVelocityY = Mathf.Clamp(rb.linearVelocityY, -wallSlideSpeed, float.MaxValue);
+
+                if (jumpFlag)
+                {
+                    float jumpDir = wallRight ? -1f : 1f;
+                    rb.linearVelocity = new Vector2(jumpDir * wallJumpForce, wallJumpVertical);
+
+                    // Flip the toaster to face the jump direction
+                    facingRight = (jumpDir > 0);
+                    Vector3 currentScale = transform.localScale;
+                    currentScale.x = facingRight ? Mathf.Abs(currentScale.x) : -Mathf.Abs(currentScale.x);
+                    transform.localScale = currentScale;
+
+                    // Set jumps to 1 so the player can still double-jump once after the kick
+                    currJumps = 1;
+                    animator.SetFloat("Jumps", 1);
+                    jumpFlag = false;
+                }
+            }
+        }
 
         // apply the movement velocity
         rb.linearVelocityX = moveDirection * speed;
-        animator.SetBool("Grounded", isGrounded && currJumps == 0);
+        animator.SetBool("Grounded", (isGrounded || isTouchingWall)&& currJumps == 0);
     }
 
     private void OnDrawGizmos()
@@ -250,6 +296,14 @@ public class CharacterController2DScript : MonoBehaviour
                 bread.Collect();
 
             SoundManager.Steve.MakeParrySound();
+        }
+
+        if (collision.CompareTag("Jam"))
+        {
+            // Now this code will actually run!
+            hasJamPowerUp = true;
+            GetComponent<SpriteRenderer>().color = new Color(0.5f, 0, 0.5f);
+            Destroy(collision.gameObject);
         }
     }
 
