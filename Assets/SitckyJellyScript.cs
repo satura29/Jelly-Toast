@@ -22,7 +22,6 @@ public class SitckyJellyScript : MonoBehaviour
             if (toaster != null)
             {
                 toaster.hasJamPowerUp = true;
-                // Optional: Play a sound or particle effect
                 Destroy(this.gameObject);
             }
         }

@@ -170,9 +170,9 @@ public class CharacterController2DScript : MonoBehaviour
 
         if (hasJamPowerUp)
         {
-            float checkDist = 0.8f;
-            bool wallRight = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.right * checkDist, 0.2f, wallLayerMask);
-            bool wallLeft = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.left * checkDist, 0.2f, wallLayerMask);
+            float checkDist = 0.5f;
+            bool wallRight = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.right * checkDist, 0.05f, wallLayerMask);
+            bool wallLeft = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.left * checkDist, 0.05f, wallLayerMask);
             
             isTouchingWall = wallRight || wallLeft;
 
