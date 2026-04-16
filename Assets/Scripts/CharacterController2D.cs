@@ -59,6 +59,9 @@ public class CharacterController2DScript : MonoBehaviour
     public bool isTouchingWall = false;
     public bool canWallJump= false;
 
+    [Header("Health System")]
+    public int lives = 1; 
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -197,9 +200,10 @@ public class CharacterController2DScript : MonoBehaviour
             bool wallRight = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.right * checkDist, 0.05f, wallLayerMask);
             bool wallLeft = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.left * checkDist, 0.05f, wallLayerMask);
             bool wallTop = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.up * checkDist, 0.05f, wallLayerMask);
+            bool wallBottom = Physics2D.OverlapCircle((Vector2)transform.position + Vector2.down * checkDist, 0.05f, wallLayerMask);
 
 
-            isTouchingWall = (wallRight || wallLeft || wallTop) && !isGrounded;
+            isTouchingWall = (wallRight || wallLeft || wallTop || wallBottom) && !isGrounded;
 
             if (isTouchingWall && !isGrounded)
             {
@@ -331,28 +335,41 @@ public class CharacterController2DScript : MonoBehaviour
 
     public void Die()
     {
-        GameManager.Gary.LoseScore();
-        GameManager.Gary.StopTimer();
-        GameManager.Gary.OverText();
+        lives--;
 
-        // enemy has killed us
-        Debug.Log("Player was injured");
-
-        animator.SetTrigger("Death");
-        moveDirection = 0f;
-        rb.linearVelocity = Vector3.zero;
-
-        rb.linearVelocityY = jumpHeight;
-
-        foreach (Collider2D col in GetComponentsInChildren<Collider2D>())
+        if (lives <= 0)
         {
-            col.enabled = false;
+            GameManager.Gary.LoseScore();
+            GameManager.Gary.StopTimer();
+            GameManager.Gary.OverText();
+
+            // enemy has killed us
+            Debug.Log("Player was injured");
+
+            animator.SetTrigger("Death");
+            moveDirection = 0f;
+            rb.linearVelocity = Vector3.zero;
+
+            rb.linearVelocityY = jumpHeight;
+
+            foreach (Collider2D col in GetComponentsInChildren<Collider2D>())
+            {
+                col.enabled = false;
+            }
+
+            this.enabled = false;
+            SoundManager.Steve.MakeDeathSound();
+
+            Invoke(nameof(BeginRestart), 3f);
+
+        }
+        else
+        {
+            float pushBack = facingRight ? -5f : 5f;
+            rb.linearVelocity = new Vector2(pushBack, jumpHeight * 0.5f);
+            _isAlive = true;
         }
 
-        this.enabled = false;
-        SoundManager.Steve.MakeDeathSound();
-
-        Invoke(nameof(BeginRestart), 3f);
     }
 
     private void BeginRestart()
@@ -364,5 +381,10 @@ public class CharacterController2DScript : MonoBehaviour
     {
         GameObject proj = Instantiate(breadProjectile, firePoint.position, Quaternion.identity);
         audioComponent.PlayOneShot(shootClip);
+    }
+
+    public void AddLife()
+    {
+        lives = 2;
     }
 }
